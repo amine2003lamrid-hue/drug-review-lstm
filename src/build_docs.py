@@ -181,8 +181,33 @@ def tex_to_docx(values, res, out_path="report/report.docx"):
         # pandoc cannot evaluate \IfFileExists: resolve figures here
         tex = re.sub(r"\\newcommand\{\\figbox\}.*?\n\n", "\n", tex, flags=re.S)
 
+        text_w = 6.3  # inches of text width in pandoc's default page; pandoc mis-sizes relative widths
+
+        def rel_width(w):  # "0.75\linewidth" / "\linewidth" -> fraction
+            return float(w.split("\\")[0] or 1)
+
+        def flatten_subfigs(m):  # subfigures -> images side by side, sub-captions appended to the caption
+            block, subcaps = m.group(0), []
+
+            def sub(s):
+                frac, inner = float(s.group(1)), s.group(2)
+                cap = re.search(r"\\caption\{(.*?)\}\\end", inner + r"\end")
+                subcaps.append(cap.group(1) if cap else "")
+                fb = re.search(r"\\figbox\{([^}]+)\}\{([^}]+)\}", inner)
+                return r"\figbox{%s}{%.2fin} " % (fb.group(1), frac * rel_width(fb.group(2)) * text_w * 0.98)
+            block = re.sub(r"\\begin\{subfigure\}\{([\d.]+)\\linewidth\}(.*?)\\end\{subfigure\}", sub, block,
+                           flags=re.S)
+            block = block.replace(r"\hfill", "").replace(r"\\[0.3em]", "\n\n")
+            labels = "; ".join(f"({chr(97 + i)}) {c}" for i, c in enumerate(subcaps))
+            i = block.rfind(r"\caption{") + 9
+            return block[:i] + block[i:].replace("}", f" {labels}." + "}", 1) if subcaps else block
+        tex = re.sub(r"\\begin\{figure\}(?:(?!\\end\{figure\}).)*?subfigure.*?\\end\{figure\}", flatten_subfigs, tex,
+                     flags=re.S)
+
         def fig(m):
-            name, width = m.group(1), m.group(2).replace(r"\linewidth", r"\textwidth")
+            name, width = m.group(1), m.group(2)
+            if "linewidth" in width:
+                width = "%.2fin" % (rel_width(width) * text_w)
             if os.path.exists(fig_abs + name):
                 return r"\includegraphics[width=%s]{%s}" % (width, fig_abs + name)
             return r"\textbf{[TO FILL AFTER RUN: figure %s]}" % name.replace("_", r"\_")
@@ -205,6 +230,16 @@ def tex_to_docx(values, res, out_path="report/report.docx"):
             return r"\begin{%s}%s\end{%s}" % (env, body, env)
         tex = re.sub(r"\\begin\{(figure|table)\}(.*?)\\end\{\1\}", number, tex, flags=re.S)
         tex = re.sub(r"\\ref\{([^}]+)\}", lambda m: nums.get(m.group(1), "?"), tex)
+
+        def unfloat(m):  # pandoc shrinks multi-image figures into a grid: emit plain image rows + caption instead
+            body = m.group(1)
+            if body.count(r"\includegraphics") < 2:
+                return m.group(0)
+            cap = re.search(r"\\caption\{(.*?)\}\s*\\label", body, flags=re.S)
+            body = re.sub(r"\\caption\{.*?\}\s*\\label\{[^}]*\}", "", body, flags=re.S)
+            body = re.sub(r"^\[[^\]]*\]|\\centering", "", body.strip())
+            return body + "\n\n\\begin{center}\\emph{" + (cap.group(1) if cap else "") + "}\\end{center}\n"
+        tex = re.sub(r"\\begin\{figure\}(.*?)\\end\{figure\}", unfloat, tex, flags=re.S)
         src = os.path.join(tmp, "report_flat.tex")
         with open(src, "w", encoding="utf-8") as f:
             f.write(tex)
@@ -422,7 +457,7 @@ def main():
         tex_to_docx(values, res)
         docx_done = True
     except Exception as e:
-        print("LaTeX -> docx unavailable, using markdown converter:", e)
+        print("LaTeX -> docx failed (if report.docx is open in Word, close it and rerun):", str(e)[:200])
         docx_done = False
     print("exported:", export("report/report.md", "slides/slides.md", docx_done))
 
