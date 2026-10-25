@@ -1,0 +1,17 @@
+{
+  "n_train_raw": 161297,
+  "n_test_raw": 53766,
+  "n_train_kept": 146941,
+  "n_test_kept": 48937,
+  "dropped_neutral": 19185,
+  "pos_ratio_train": 0.7272714899177221,
+  "pos_ratio_test": 0.724196415799906,
+  "len_mean": 93.9770111813585,
+  "len_median": 93.0,
+  "len_p90": 156.0,
+  "len_p95": 162.0,
+  "coverage_max_len": 0.9978222551908589,
+  "max_len": 200,
+  "n_conditions": 898,
+  "n_drugs": 3617
+}
