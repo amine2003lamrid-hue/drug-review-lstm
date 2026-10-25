@@ -155,10 +155,10 @@ def tex_inline(s):
     return s
 
 
-def tex_table(md):
+def tex_table(md, resize=True):
     rows = [l for l in md.strip().splitlines() if l.startswith("|") and not re.match(r"^\|[-| :]+\|$", l)]
-    if not rows:
-        return tex_inline(md)
+    if not rows:  # placeholder: keep a (one-cell) table so the caption is kept in every output format
+        return r"\begin{tabular}{l}\toprule " + tex_inline(md) + r" \\ \bottomrule\end{tabular}"
     cells = [[tex_inline(c.strip()) for c in r.strip().strip("|").split("|")] for r in rows]
     n = len(cells[0])
     body = [r"\begin{tabular}{l" + "r" * (n - 1) + "}", r"\toprule",
@@ -166,10 +166,54 @@ def tex_table(md):
     body += [" & ".join(r) + r" \\" for r in cells[1:]]
     body += [r"\bottomrule", r"\end{tabular}"]
     tab = "\n".join(body)
-    return r"\resizebox{\linewidth}{!}{%" + "\n" + tab + "}" if n > 5 else tab
+    return r"\resizebox{\linewidth}{!}{%" + "\n" + tab + "}" if n > 5 and resize else tab
 
 
-def write_latex(values, res, out_dir="report", fig_dir="../figures/"):
+def tex_to_docx(values, res, out_path="report/report.docx"):
+    """Convert report.tex (with results.tex inlined) to Word via pandoc (pypandoc_binary)."""
+    import tempfile
+    import pypandoc
+    with tempfile.TemporaryDirectory() as tmp:
+        fig_abs = os.path.abspath("figures").replace("\\", "/") + "/"
+        res_tex = open(write_latex(values, res, out_dir=tmp, fig_dir=fig_abs, resize=False), encoding="utf-8").read()
+        tex = open("report/report.tex", encoding="utf-8").read()
+        tex = tex.replace(r"\input{results.tex}", res_tex)
+        # pandoc cannot evaluate \IfFileExists: resolve figures here
+        tex = re.sub(r"\\newcommand\{\\figbox\}.*?\n\n", "\n", tex, flags=re.S)
+
+        def fig(m):
+            name, width = m.group(1), m.group(2).replace(r"\linewidth", r"\textwidth")
+            if os.path.exists(fig_abs + name):
+                return r"\includegraphics[width=%s]{%s}" % (width, fig_abs + name)
+            return r"\textbf{[TO FILL AFTER RUN: figure %s]}" % name.replace("_", r"\_")
+        tex = re.sub(r"\\figbox\{([^}]+)\}\{([^}]+)\}", fig, tex)
+        tex = tex.replace(r"\todo{}", r"\textbf{[TO FILL AFTER RUN]}")
+        tex = re.sub(r"\\todo\{([^}]*)\}", r"\\textbf{[TO FILL AFTER RUN\1]}", tex)
+        tex = re.sub(r"\\vspace\*?\{[^}]*\}", "", tex)
+        # pandoc leaves \ref unresolved in docx: number figures/tables and their captions ourselves
+        nums, count = {}, {"figure": 0, "table": 0}
+
+        def number(m):
+            env, body = m.group(1), m.group(2)
+            label = re.search(r"\\label\{([^}]+)\}", body)
+            count[env] += 1
+            if label:
+                nums[label.group(1)] = str(count[env])
+            i = body.rfind(r"\caption{")
+            if i >= 0:
+                body = body[:i] + r"\caption{%s %d: " % (env.capitalize(), count[env]) + body[i + 9:]
+            return r"\begin{%s}%s\end{%s}" % (env, body, env)
+        tex = re.sub(r"\\begin\{(figure|table)\}(.*?)\\end\{\1\}", number, tex, flags=re.S)
+        tex = re.sub(r"\\ref\{([^}]+)\}", lambda m: nums.get(m.group(1), "?"), tex)
+        src = os.path.join(tmp, "report_flat.tex")
+        with open(src, "w", encoding="utf-8") as f:
+            f.write(tex)
+        pypandoc.convert_file(src, "docx", format="latex", outputfile=os.path.abspath(out_path),
+                              extra_args=[f"--resource-path={tmp}"])
+    return out_path
+
+
+def write_latex(values, res, out_dir="report", fig_dir="../figures/", resize=True):
     abstract = TODO
     if res:
         best = max(res.values(), key=lambda r: r["best_val_macro_f1"])
@@ -188,7 +232,7 @@ def write_latex(values, res, out_dir="report", fig_dir="../figures/"):
     lines += [r"\newcommand{\%s}{%s}" % (m, tex_inline(values[k])) for m, k in macros.items()]
     lines.append(r"\newcommand{\AbstractResult}{%s}" % tex_inline(abstract))
     for m, k in (("ParamsTable", "PARAMS_TABLE"), ("ArchTable", "ARCH_TABLE"), ("HparamTable", "HPARAM_TABLE")):
-        lines.append(r"\newcommand{\%s}{%%" % m + "\n" + tex_table(values[k]) + "}")
+        lines.append(r"\newcommand{\%s}{%%" % m + "\n" + tex_table(values[k], resize) + "}")
     path = os.path.join(out_dir, "results.tex")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
@@ -283,8 +327,8 @@ def md_to_docx(md_path, out_path):
     doc.save(out_path)
 
 
-def export(report_md, slides_md):
-    out = []
+def export(report_md, slides_md, docx_done=False):
+    out = [report_md.replace(".md", ".docx")] if docx_done else []
     if shutil.which("pandoc"):
         pdf = report_md.replace(".md", ".pdf")
         r = subprocess.run(["pandoc", os.path.basename(report_md), "-o", os.path.basename(pdf),
@@ -374,7 +418,13 @@ def main():
         for _ in range(2):
             subprocess.run(["pdflatex", "-interaction=nonstopmode", "report.tex"], cwd="report",
                            stdout=subprocess.DEVNULL)
-    print("exported:", export("report/report.md", "slides/slides.md"))
+    try:  # Word version of the LaTeX report (needs pypandoc_binary); else fall back to the markdown version
+        tex_to_docx(values, res)
+        docx_done = True
+    except Exception as e:
+        print("LaTeX -> docx unavailable, using markdown converter:", e)
+        docx_done = False
+    print("exported:", export("report/report.md", "slides/slides.md", docx_done))
 
 
 if __name__ == "__main__":
