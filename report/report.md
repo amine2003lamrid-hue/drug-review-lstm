@@ -1,6 +1,6 @@
 # Sentiment Classification of Drug Reviews with Hand-Implemented LSTM Variants
 
-*Advanced NLP: Lab Project on Recurrent Neural Networks, 2026/2027. Team: [TEAM MEMBERS: name 1, name 2, name 3, name 4, name 5]. Code: [GITHUB REPO URL]*
+*Advanced NLP: Lab Project on Recurrent Neural Networks, 2026/2027. Team: Mohamed Amine Lamrid, Badr Misraoui (Lab group E). Code: https://github.com/amine2003lamrid-hue/drug-review-lstm*
 
 ## 1. Goal of the task
 

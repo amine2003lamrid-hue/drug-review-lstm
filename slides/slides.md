@@ -15,7 +15,7 @@ style: |
 
 Vanilla LSTM vs CIFG vs LSTMP, implemented from scratch in PyTorch
 
-[TEAM MEMBERS: name 1, name 2, name 3, name 4, name 5]
+Mohamed Amine Lamrid, Badr Misraoui (Lab group E)
 Advanced NLP, Lab Project on RNNs, 2026/2027
 
 ---
@@ -105,6 +105,6 @@ Baseline: Adam, lr 1e-3, batch 128, Xavier, clip 1.0, ≤10 epochs, early stop o
 
 # Thank you
 
-Code: [GITHUB REPO URL]
+Code: https://github.com/amine2003lamrid-hue/drug-review-lstm
 
 Questions?

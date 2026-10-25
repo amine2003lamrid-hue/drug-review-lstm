@@ -14,7 +14,7 @@ from scratch with `nn.Linear` (no `nn.LSTM` / `nn.LSTMCell` / `nn.RNN`):
 Plus a one-factor-at-a-time hyperparameter study on the vanilla model (learning rate, optimizer, batch size,
 weight initialization) and a bonus LSTMP projection-size comparison (P=64 vs 128).
 
-**Team:** [TEAM MEMBERS: name 1, name 2, name 3, name 4, name 5]
+**Team (Lab group E):** Mohamed Amine Lamrid, Badr Misraoui
 
 ## Results
 
