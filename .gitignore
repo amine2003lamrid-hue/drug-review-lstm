@@ -1,0 +1,9 @@
+data/
+checkpoints/
+runs/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+results/quick/
+figures/quick/
