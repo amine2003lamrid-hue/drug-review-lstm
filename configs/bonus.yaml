@@ -1,0 +1,5 @@
+experiment: projection_size
+defaults: {cell: lstmp}
+runs:
+  - {name: lstmp_p128, proj_size: 128}
+  - {name: lstmp_p64, proj_size: 64}

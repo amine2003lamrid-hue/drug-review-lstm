@@ -1,0 +1,5 @@
+experiment: architecture
+runs:
+  - {name: vanilla, cell: vanilla}
+  - {name: cifg, cell: cifg}
+  - {name: lstmp_p128, cell: lstmp, proj_size: 128}

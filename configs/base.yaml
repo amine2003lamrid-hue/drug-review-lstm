@@ -1,0 +1,24 @@
+# Shared defaults: identical data, splits, seed and evaluation protocol for every run.
+seed: 42
+data_dir: data
+n_train: 40000      # stratified subsample of the 90% train split (null = use all)
+n_val: 5000         # stratified subsample of the 10% validation split
+n_test: 10000       # stratified subsample of the official test file
+min_freq: 2
+max_vocab: 20000
+max_len: 200
+
+cell: vanilla
+embed_dim: 128
+hidden_size: 256
+num_layers: 1
+proj_size: 128
+dropout: 0.3
+
+optimizer: adam
+lr: 0.001
+batch_size: 128
+init: xavier
+clip: 1.0
+epochs: 10
+patience: 3

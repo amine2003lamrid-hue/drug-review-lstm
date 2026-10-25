@@ -1,0 +1,10 @@
+# One factor changed at a time from the vanilla baseline (Adam, lr 1e-3, batch 128, Xavier).
+experiment: hparams
+defaults: {cell: vanilla}
+runs:
+  - {name: vanilla}                                  # baseline (shared with architecture study)
+  - {name: vanilla_lr5e-3, lr: 0.005}
+  - {name: vanilla_sgd, optimizer: sgd, lr: 0.05, momentum: 0.9}
+  - {name: vanilla_bs64, batch_size: 64}
+  - {name: vanilla_bs256, batch_size: 256}
+  - {name: vanilla_orthogonal, init: orthogonal}
