@@ -63,7 +63,7 @@ python -m src.run_experiments --config configs/architecture.yaml   # A: vanilla 
 python -m src.run_experiments --config configs/hparams.yaml        # B: hyperparameter study
 python -m src.run_experiments --config configs/bonus.yaml          # C: LSTMP P=64 vs P=128
 python -m src.make_report_assets                            # results/*_table.md + figures/*.png
-python -m src.build_docs --team "A, B, C, D, E" --repo-url https://github.com/<you>/<repo>
+python -m src.build_docs   # team names and repo URL are the defaults; override with --team / --repo-url
 tensorboard --logdir runs
 ```
 

@@ -67,6 +67,18 @@ def table_from(path, short=False):
     return "\n".join(lines)
 
 
+def compact_table(path, cols, headers):
+    """Report-sized version of a results table: selected columns (by index), short headers."""
+    if not os.path.exists(path):
+        return TODO
+    with open(path) as f:
+        rows = [[x.strip() for x in l.strip().strip("|").split("|")] for l in f
+                if l.startswith("|") and not re.match(r"^\|[-| :]+\|$", l.strip())]
+    out = ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+    out += ["| " + " | ".join(r[i] for i in cols) + " |" for r in rows[1:]]
+    return "\n".join(out)
+
+
 def arch_findings(res):
     if "vanilla" not in res:
         return TODO, TODO
@@ -180,6 +192,35 @@ def tex_table(md, resize=True):
     return r"\resizebox{\linewidth}{!}{%" + "\n" + tab + "}" if n > 5 and resize else tab
 
 
+def make_reference_docx(path="report/reference.docx"):
+    """Compact Word styles for pandoc (A4, 1.8 cm margins, 10 pt body) so the report fits 4-5 pages."""
+    import pypandoc
+    from docx import Document
+    from docx.shared import Cm, Pt
+    subprocess.run([pypandoc.get_pandoc_path(), "-o", path, "--print-default-data-file", "reference.docx"], check=True)
+    doc = Document(path)
+    for s in doc.sections:
+        s.page_width, s.page_height = Cm(21.0), Cm(29.7)
+        s.left_margin = s.right_margin = s.top_margin = s.bottom_margin = Cm(1.8)
+    sizes = {"Normal": 10, "Body Text": 10, "First Paragraph": 10, "Compact": 10, "Abstract": 9,
+             "Title": 16, "Subtitle": 12, "Author": 10, "Date": 9, "Heading 1": 12.5, "Heading 2": 11,
+             "Heading 3": 10.5, "Heading 4": 10, "Caption": 8.5, "Image Caption": 8.5, "Table Caption": 8.5,
+             "Abstract Title": 9.5, "Bibliography": 9}
+    for name, size in sizes.items():
+        try:
+            st = doc.styles[name]
+        except KeyError:
+            continue
+        st.font.size = Pt(size)
+        st.font.name = "Calibri"
+        pf = st.paragraph_format
+        pf.space_before = Pt(8 if name == "Heading 1" else 4 if name.startswith("Heading") else 0)
+        pf.space_after = Pt(2 if name.startswith("Heading") else 4)
+        pf.line_spacing = 1.0
+    doc.save(path)
+    return path
+
+
 def tex_to_docx(values, res, out_path="report/report.docx"):
     """Convert report.tex (with results.tex inlined) to Word via pandoc (pypandoc_binary)."""
     import tempfile
@@ -192,7 +233,7 @@ def tex_to_docx(values, res, out_path="report/report.docx"):
         # pandoc cannot evaluate \IfFileExists: resolve figures here
         tex = re.sub(r"\\newcommand\{\\figbox\}.*?\n\n", "\n", tex, flags=re.S)
 
-        text_w = 6.3  # inches of text width in pandoc's default page; pandoc mis-sizes relative widths
+        text_w = 6.85  # inches of text width (A4, 1.8 cm margins); pandoc mis-sizes relative widths
 
         def rel_width(w):  # "0.75\linewidth" / "\linewidth" -> fraction
             return float(w.split("\\")[0] or 1)
@@ -255,7 +296,8 @@ def tex_to_docx(values, res, out_path="report/report.docx"):
         with open(src, "w", encoding="utf-8") as f:
             f.write(tex)
         pypandoc.convert_file(src, "docx", format="latex", outputfile=os.path.abspath(out_path),
-                              extra_args=[f"--resource-path={tmp}"])
+                              extra_args=[f"--resource-path={tmp}",
+                                          f"--reference-doc={os.path.abspath(make_reference_docx())}"])
     return out_path
 
 
@@ -277,7 +319,8 @@ def write_latex(values, res, out_dir="report", fig_dir="../figures/", resize=Tru
              r"\newcommand{\figdir}{%s}" % fig_dir]
     lines += [r"\newcommand{\%s}{%s}" % (m, tex_inline(values[k])) for m, k in macros.items()]
     lines.append(r"\newcommand{\AbstractResult}{%s}" % tex_inline(abstract))
-    for m, k in (("ParamsTable", "PARAMS_TABLE"), ("ArchTable", "ARCH_TABLE"), ("HparamTable", "HPARAM_TABLE")):
+    for m, k in (("ParamsTable", "PARAMS_TABLE"), ("ArchTable", "ARCH_TABLE_COMPACT"),
+                 ("HparamTable", "HPARAM_TABLE_COMPACT")):
         lines.append(r"\newcommand{\%s}{%%" % m + "\n" + tex_table(values[k], resize) + "}")
     path = os.path.join(out_dir, "results.tex")
     with open(path, "w", encoding="utf-8") as f:
@@ -434,6 +477,12 @@ def main():
         "ARCH_TABLE": table_from(f"{args.results}/architecture_table.md"),
         "ARCH_TABLE_SHORT": table_from(f"{args.results}/architecture_table.md", short=True),
         "HPARAM_TABLE": table_from(f"{args.results}/hparam_table.md"),
+        "ARCH_TABLE_COMPACT": compact_table(
+            f"{args.results}/architecture_table.md", [0, 2, 1, 3, 4, 5, 6, 7, 8],
+            ["Model", "Recurrent params", "Total params", "Acc.", "Macro-F1", "Prec.", "Rec.", "Best ep.", "s/epoch"]),
+        "HPARAM_TABLE_COMPACT": compact_table(
+            f"{args.results}/hparam_table.md", [0, 3, 4, 5, 6, 7, 8],
+            ["Vanilla LSTM variant", "Acc.", "Macro-F1", "Prec.", "Rec.", "Best ep.", "s/epoch"]),
         "ARCH_FINDINGS": arch_long, "HPARAM_FINDINGS": hp_long, "HPARAM_FINDINGS_SHORT": hp_short,
         "PROJ_FINDINGS": proj_findings(res),
         "BEST_SUMMARY": best_long, "BEST_SUMMARY_SHORT": best_short, "CM_SENTENCE": cm_sentence,

@@ -38,24 +38,24 @@ LSTMP (P=64) & 214,080 & 2,603,202 & -45.7\% \\
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrrrrrrr}
 \toprule
-\textbf{Model} & \textbf{Trainable params} & \textbf{Recurrent params} & \textbf{Test acc.} & \textbf{Test macro-F1} & \textbf{Precision} & \textbf{Recall} & \textbf{Best epoch} & \textbf{Time/epoch (s)} \\
+\textbf{Model} & \textbf{Recurrent params} & \textbf{Total params} & \textbf{Acc.} & \textbf{Macro-F1} & \textbf{Prec.} & \textbf{Rec.} & \textbf{Best ep.} & \textbf{s/epoch} \\
 \midrule
-Vanilla LSTM & 2,783,746 & 394,240 & 0.8872 & 0.8561 & 0.8635 & 0.8495 & 8 & 48.6 \\
-CIFG-LSTM & 2,685,186 & 295,680 & 0.8893 & 0.8614 & 0.8616 & 0.8612 & 6 & 41.1 \\
-LSTMP (P=128) & 2,685,314 & 296,064 & 0.8806 & 0.8526 & 0.8481 & 0.8575 & 8 & 51.2 \\
+Vanilla LSTM & 394,240 & 2,783,746 & 0.8872 & 0.8561 & 0.8635 & 0.8495 & 8 & 48.6 \\
+CIFG-LSTM & 295,680 & 2,685,186 & 0.8893 & 0.8614 & 0.8616 & 0.8612 & 6 & 41.1 \\
+LSTMP (P=128) & 296,064 & 2,685,314 & 0.8806 & 0.8526 & 0.8481 & 0.8575 & 8 & 51.2 \\
 \bottomrule
 \end{tabular}}}
 \newcommand{\HparamTable}{%
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{lrrrrrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-\textbf{Vanilla LSTM variant} & \textbf{Trainable params} & \textbf{Recurrent params} & \textbf{Test acc.} & \textbf{Test macro-F1} & \textbf{Precision} & \textbf{Recall} & \textbf{Best epoch} & \textbf{Time/epoch (s)} \\
+\textbf{Vanilla LSTM variant} & \textbf{Acc.} & \textbf{Macro-F1} & \textbf{Prec.} & \textbf{Rec.} & \textbf{Best ep.} & \textbf{s/epoch} \\
 \midrule
-Baseline (Adam, lr 1e-3, bs 128, Xavier) & 2,783,746 & 394,240 & 0.8872 & 0.8561 & 0.8635 & 0.8495 & 8 & 48.6 \\
-Learning rate 5e-3 & 2,783,746 & 394,240 & 0.8857 & 0.8561 & 0.8582 & 0.8541 & 5 & 48.4 \\
-SGD (momentum 0.9, lr 0.05) & 2,783,746 & 394,240 & 0.8632 & 0.8348 & 0.8249 & 0.8477 & 8 & 48.6 \\
-Batch size 64 & 2,783,746 & 394,240 & 0.8838 & 0.8552 & 0.8537 & 0.8568 & 8 & 63.5 \\
-Batch size 256 & 2,783,746 & 394,240 & 0.8836 & 0.8511 & 0.8596 & 0.8438 & 8 & 42.0 \\
-Orthogonal recurrent init & 2,783,746 & 394,240 & 0.8789 & 0.8467 & 0.8508 & 0.8430 & 4 & 48.5 \\
+Baseline (Adam, lr 1e-3, bs 128, Xavier) & 0.8872 & 0.8561 & 0.8635 & 0.8495 & 8 & 48.6 \\
+Learning rate 5e-3 & 0.8857 & 0.8561 & 0.8582 & 0.8541 & 5 & 48.4 \\
+SGD (momentum 0.9, lr 0.05) & 0.8632 & 0.8348 & 0.8249 & 0.8477 & 8 & 48.6 \\
+Batch size 64 & 0.8838 & 0.8552 & 0.8537 & 0.8568 & 8 & 63.5 \\
+Batch size 256 & 0.8836 & 0.8511 & 0.8596 & 0.8438 & 8 & 42.0 \\
+Orthogonal recurrent init & 0.8789 & 0.8467 & 0.8508 & 0.8430 & 4 & 48.5 \\
 \bottomrule
 \end{tabular}}}
