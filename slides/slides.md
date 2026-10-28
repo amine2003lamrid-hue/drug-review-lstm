@@ -70,25 +70,29 @@ LSTMP:   m = o⊙tanh(c),  h = W_p m + b_p  (h ∈ ℝ^P, P=128 < H=256)
 
 Baseline: Adam, lr 1e-3, batch 128, Xavier, clip 1.0, ≤10 epochs, early stop on val macro-F1 (patience 3), seed 42
 
-**[TO FILL AFTER RUN]** *(figure hparam_comparison.png)*
+![w:820](../figures/hparam_comparison.png)
 
-**[TO FILL AFTER RUN]**
+Best: **Learning rate 5e-3** (macro-F1 0.856) vs baseline 0.856
 
 ---
 
 ## 5. Architecture comparison
 
-**[TO FILL AFTER RUN]**
+| Model | Trainable params | Test acc. | Test macro-F1 | Time/epoch (s) |
+| --- | --- | --- | --- | --- |
+| Vanilla LSTM | 2,783,746 | 0.8872 | 0.8561 | 48.6 |
+| CIFG-LSTM | 2,685,186 | 0.8893 | 0.8614 | 41.1 |
+| LSTMP (P=128) | 2,685,314 | 0.8806 | 0.8526 | 51.2 |
 
-**[TO FILL AFTER RUN]** *(figure params_vs_f1.png)*
+![w:760](../figures/params_vs_f1.png)
 
 ---
 
 ## 5. Training curves and final model
 
-**[TO FILL AFTER RUN]** *(figure val_curves.png)* **[TO FILL AFTER RUN]** *(figure confusion_matrix.png)*
+![w:640](../figures/val_curves.png) ![w:330](../figures/confusion_matrix.png)
 
-**[TO FILL AFTER RUN]**
+Final: **cifg**: test acc 0.889, macro-F1 0.861
 
 ---
 

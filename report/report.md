@@ -57,31 +57,42 @@ Because the four recurrent matrices act on a P-dimensional state, their cost dro
 
 **Study (vanilla LSTM, one factor changed at a time):** learning rate 10⁻³ vs 5·10⁻³; Adam vs SGD (momentum 0.9, lr 0.05); batch size 64 / 128 / 256; Xavier-uniform vs orthogonal recurrent weights.
 
-**[TO FILL AFTER RUN]**
+| Vanilla LSTM variant | Trainable params | Recurrent params | Test acc. | Test macro-F1 | Precision | Recall | Best epoch | Time/epoch (s) |
+|---|---|---|---|---|---|---|---|---|
+| Baseline (Adam, lr 1e-3, bs 128, Xavier) | 2,783,746 | 394,240 | 0.8872 | 0.8561 | 0.8635 | 0.8495 | 8 | 48.6 |
+| Learning rate 5e-3 | 2,783,746 | 394,240 | 0.8857 | 0.8561 | 0.8582 | 0.8541 | 5 | 48.4 |
+| SGD (momentum 0.9, lr 0.05) | 2,783,746 | 394,240 | 0.8632 | 0.8348 | 0.8249 | 0.8477 | 8 | 48.6 |
+| Batch size 64 | 2,783,746 | 394,240 | 0.8838 | 0.8552 | 0.8537 | 0.8568 | 8 | 63.5 |
+| Batch size 256 | 2,783,746 | 394,240 | 0.8836 | 0.8511 | 0.8596 | 0.8438 | 8 | 42.0 |
+| Orthogonal recurrent init | 2,783,746 | 394,240 | 0.8789 | 0.8467 | 0.8508 | 0.8430 | 4 | 48.5 |
 
-**[TO FILL AFTER RUN]** *(figure hparam_comparison.png)*
+![Hyperparameter comparison](../figures/hparam_comparison.png){width=80%}
 
-**[TO FILL AFTER RUN]**
+Relative to the baseline (macro-F1 0.8561): *learning rate*: Learning rate 5e-3 gives 0.8561 (+0.0000), best epoch 5, 48.4 s/epoch. *optimizer*: SGD (momentum 0.9, lr 0.05) gives 0.8348 (-0.0213), best epoch 8, 48.6 s/epoch. *batch size*: Batch size 64 gives 0.8552 (-0.0009), best epoch 8, 63.5 s/epoch. *batch size*: Batch size 256 gives 0.8511 (-0.0050), best epoch 8, 42.0 s/epoch. *initialization*: Orthogonal recurrent init gives 0.8467 (-0.0093), best epoch 4, 48.5 s/epoch. The best setting in this study is **Learning rate 5e-3** (0.8561). The baseline (Adam, lr 1e-3) is already a good setting. SGD with momentum is the only clearly worse choice (-0.021 macro-F1), and it is under-fitted rather than overfitted: after 10 epochs its training loss is still about 0.20 (vs 0.02 with Adam) and its validation loss never turns upward, so it converges more slowly within the same epoch budget. A 5x larger Adam learning rate reaches the same macro-F1 three epochs earlier (best epoch 5 vs 8). Batch size mainly trades time for stability: batch 64 matches the baseline but is about 30% slower per epoch, batch 256 is the fastest but loses 0.005. Orthogonal recurrent initialization brought no gain on the test set (-0.009) and early-stopped after 7 epochs; with reviews of about 100 tokens and Adam, its benefit for gradient flow over long sequences is not needed.
 
 ## 5. Final model performance and evaluation
 
 **Architecture comparison** (identical hyperparameters, test set):
 
-**[TO FILL AFTER RUN]**
+| Model | Trainable params | Recurrent params | Test acc. | Test macro-F1 | Precision | Recall | Best epoch | Time/epoch (s) |
+|---|---|---|---|---|---|---|---|---|
+| Vanilla LSTM | 2,783,746 | 394,240 | 0.8872 | 0.8561 | 0.8635 | 0.8495 | 8 | 48.6 |
+| CIFG-LSTM | 2,685,186 | 295,680 | 0.8893 | 0.8614 | 0.8616 | 0.8612 | 6 | 41.1 |
+| LSTMP (P=128) | 2,685,314 | 296,064 | 0.8806 | 0.8526 | 0.8481 | 0.8575 | 8 | 51.2 |
 
-**[TO FILL AFTER RUN]** *(figure val_curves.png)*
+![Validation curves](../figures/val_curves.png){width=90%}
 
-**[TO FILL AFTER RUN]**
+The vanilla baseline reaches a test macro-F1 of 0.8561 (accuracy 0.8872). CIFG-LSTM reaches a test macro-F1 of 0.8614 (+0.0053 vs vanilla) with 25.0% fewer recurrent parameters and 41.1 s/epoch vs 48.6 s for vanilla; its best validation epoch is 6. LSTMP (P=128) reaches a test macro-F1 of 0.8526 (-0.0035 vs vanilla) with 24.9% fewer recurrent parameters and 51.2 s/epoch vs 48.6 s for vanilla; its best validation epoch is 8. All three cells land within 0.01 macro-F1 of each other, which a single seed cannot reliably separate, so the main finding is that neither efficiency variant loses measurable accuracy: CIFG removes the input gate (25% fewer recurrent parameters, about 15% faster epochs) and even scores slightly higher, and LSTMP keeps a 256-d cell with a 128-d recurrent state for the same budget at a small cost (-0.0035). The validation curves show the same pattern for every cell: validation loss is lowest around epoch 4 and then rises while training loss falls to about 0.02 and validation macro-F1 stays on a plateau between 0.84 and 0.87. The models overfit and become over-confident after a few epochs; selecting the checkpoint on macro-F1 rather than on loss keeps the better-ranked epochs.
 
-**[TO FILL AFTER RUN]** *(figure params_vs_f1.png)*
+![Parameters vs F1](../figures/params_vs_f1.png){width=90%}
 
-**Projection size (bonus).** **[TO FILL AFTER RUN]**
+**Projection size (bonus).** Halving the projection from P=128 to P=64 reduces the recurrent parameters from 296,064 to 214,080 (27.7% fewer) and changes test macro-F1 from 0.8526 to 0.8493 (-0.0033).
 
-**Final model.** **[TO FILL AFTER RUN]**
+**Final model.** Selecting on **validation** macro-F1 across all runs, the final model is **cifg** (cell `cifg`, 2,685,186 trainable parameters, val macro-F1 0.8684). On the 10,000-review test set it obtains accuracy **0.8893**, macro-F1 **0.8614**, macro precision 0.8616 and macro recall 0.8612.
 
-**[TO FILL AFTER RUN]** *(figure confusion_matrix.png)*
+![Confusion matrix](../figures/confusion_matrix.png){width=42%}
 
-**[TO FILL AFTER RUN]**
+Recall is 79.8% on negative reviews and 92.4% on positive reviews: 556 negative reviews are predicted positive and 551 positive reviews are predicted negative. Errors are concentrated on the minority class: the two error types are almost equally frequent in absolute terms (556 vs 551), but negatives are only about 28% of the test set, so recall is about 12 points lower on negative reviews than on positive ones. A class-weighted loss or a decision threshold tuned on the validation set (Section 6) directly targets this gap.
 
 ## 6. Limitations and potential improvements
 

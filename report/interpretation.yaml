@@ -1,0 +1,28 @@
+# Hand-written interpretation of the results, inserted into the report by `python -m src.build_docs`.
+# Every statement is based on results/*.json from the Colab run (single seed 42). Edit freely.
+
+architecture: >
+  All three cells land within 0.01 macro-F1 of each other, which a single seed cannot reliably separate,
+  so the main finding is that neither efficiency variant loses measurable accuracy: CIFG removes the input
+  gate (25% fewer recurrent parameters, about 15% faster epochs) and even scores slightly higher, and
+  LSTMP keeps a 256-d cell with a 128-d recurrent state for the same budget at a small cost (-0.0035).
+  The validation curves show the same pattern for every cell: validation loss is lowest around epoch 4
+  and then rises while training loss falls to about 0.02 and validation macro-F1 stays on a plateau
+  between 0.84 and 0.87. The models overfit and become over-confident after a few epochs; selecting the
+  checkpoint on macro-F1 rather than on loss keeps the better-ranked epochs.
+
+hyperparameters: >
+  The baseline (Adam, lr 1e-3) is already a good setting. SGD with momentum is the only clearly worse
+  choice (-0.021 macro-F1), and it is under-fitted rather than overfitted: after 10 epochs its training
+  loss is still about 0.20 (vs 0.02 with Adam) and its validation loss never turns upward, so it converges
+  more slowly within the same epoch budget. A 5x larger Adam learning rate reaches the same macro-F1 three
+  epochs earlier (best epoch 5 vs 8). Batch size mainly trades time for stability: batch 64 matches the
+  baseline but is about 30% slower per epoch, batch 256 is the fastest but loses 0.005. Orthogonal
+  recurrent initialization brought no gain on the test set (-0.009) and early-stopped after 7 epochs;
+  with reviews of about 100 tokens and Adam, its benefit for gradient flow over long sequences is not needed.
+
+errors: >
+  Errors are concentrated on the minority class: the two error types are almost equally frequent in
+  absolute terms (556 vs 551), but negatives are only about 28% of the test set, so recall is about
+  12 points lower on negative reviews than on positive ones. A class-weighted loss or a decision
+  threshold tuned on the validation set (Section 6) directly targets this gap.

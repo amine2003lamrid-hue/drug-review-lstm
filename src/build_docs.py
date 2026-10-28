@@ -23,6 +23,17 @@ from .model import count_params
 TODO = "**[TO FILL AFTER RUN]**"
 
 
+def interpretation(key, hint):
+    """Hand-written interpretation from report/interpretation.yaml, else a placeholder."""
+    path = "report/interpretation.yaml"
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            text = (yaml.safe_load(f) or {}).get(key)
+        if text:
+            return " ".join(str(text).split())
+    return TODO.replace("TO FILL AFTER RUN", f"TO FILL AFTER RUN: {hint}")
+
+
 def pct(x):
     return f"{100 * x:.1f}%"
 
@@ -73,7 +84,7 @@ def arch_findings(res):
                    f"its best validation epoch is {r['best_epoch']}.")
     long = ("The vanilla baseline reaches a test macro-F1 of {:.4f} (accuracy {:.4f}). ".format(
         v["test"]["macro_f1"], v["test"]["accuracy"]) + " ".join(out) +
-        f" {TODO.replace('TO FILL AFTER RUN', 'TO FILL AFTER RUN: 1-2 sentences interpreting these gaps')}")
+        " " + interpretation("architecture", "1-2 sentences interpreting these gaps"))
     return long, " ".join(out)
 
 
@@ -94,7 +105,7 @@ def hparam_findings(res):
                      f"{r['mean_epoch_time_s']:.1f} s/epoch.")
     long = (f"Relative to the baseline (macro-F1 {b:.4f}): " + " ".join(parts) +
             f" The best setting in this study is **{best[0]}** ({best[1]:.4f}). "
-            f"{TODO.replace('TO FILL AFTER RUN', 'TO FILL AFTER RUN: interpret, e.g. SGD convergence speed, batch-size/time trade-off')}")
+            + interpretation("hyperparameters", "interpret, e.g. SGD convergence speed, batch-size/time trade-off"))
     short = f"Best: **{best[0]}** (macro-F1 {best[1]:.3f}) vs baseline {b:.3f}"
     return long, short
 
@@ -122,7 +133,7 @@ def best_summary(res):
          f"recall {t['recall']:.4f}.")
     cm = (f"Recall is {tn / (tn + fp):.1%} on negative reviews and {tp / (tp + fn):.1%} on positive reviews: "
           f"{fp:,} negative reviews are predicted positive and {fn:,} positive reviews are predicted negative. "
-          f"{TODO.replace('TO FILL AFTER RUN', 'TO FILL AFTER RUN: inspect a few misclassified reviews (sarcasm, mixed side-effects vs efficacy) and comment')}")
+          + interpretation("errors", "comment on the error pattern"))
     short = f"Final: **{best['name']}**: test acc {t['accuracy']:.3f}, macro-F1 {t['macro_f1']:.3f}"
     return s, cm, short
 

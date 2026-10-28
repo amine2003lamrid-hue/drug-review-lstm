@@ -1,0 +1,14 @@
+{
+  "best_model_by_val_f1": "cifg",
+  "runs": [
+    "cifg",
+    "lstmp_p128",
+    "lstmp_p64",
+    "vanilla",
+    "vanilla_bs256",
+    "vanilla_bs64",
+    "vanilla_lr5e-3",
+    "vanilla_orthogonal",
+    "vanilla_sgd"
+  ]
+}

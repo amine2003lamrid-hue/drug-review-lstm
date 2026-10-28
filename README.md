@@ -19,7 +19,28 @@ weight initialization) and a bonus LSTMP projection-size comparison (P=64 vs 128
 ## Results
 
 <!-- RESULTS_START -->
-**[TO FILL AFTER RUN]**: run the experiments, then `python -m src.make_report_assets && python -m src.build_docs`.
+Architecture comparison (test set):
+
+| Model | Trainable params | Recurrent params | Test acc. | Test macro-F1 | Precision | Recall | Best epoch | Time/epoch (s) |
+|---|---|---|---|---|---|---|---|---|
+| Vanilla LSTM | 2,783,746 | 394,240 | 0.8872 | 0.8561 | 0.8635 | 0.8495 | 8 | 48.6 |
+| CIFG-LSTM | 2,685,186 | 295,680 | 0.8893 | 0.8614 | 0.8616 | 0.8612 | 6 | 41.1 |
+| LSTMP (P=128) | 2,685,314 | 296,064 | 0.8806 | 0.8526 | 0.8481 | 0.8575 | 8 | 51.2 |
+
+Hyperparameter study (vanilla LSTM, test set):
+
+| Vanilla LSTM variant | Trainable params | Recurrent params | Test acc. | Test macro-F1 | Precision | Recall | Best epoch | Time/epoch (s) |
+|---|---|---|---|---|---|---|---|---|
+| Baseline (Adam, lr 1e-3, bs 128, Xavier) | 2,783,746 | 394,240 | 0.8872 | 0.8561 | 0.8635 | 0.8495 | 8 | 48.6 |
+| Learning rate 5e-3 | 2,783,746 | 394,240 | 0.8857 | 0.8561 | 0.8582 | 0.8541 | 5 | 48.4 |
+| SGD (momentum 0.9, lr 0.05) | 2,783,746 | 394,240 | 0.8632 | 0.8348 | 0.8249 | 0.8477 | 8 | 48.6 |
+| Batch size 64 | 2,783,746 | 394,240 | 0.8838 | 0.8552 | 0.8537 | 0.8568 | 8 | 63.5 |
+| Batch size 256 | 2,783,746 | 394,240 | 0.8836 | 0.8511 | 0.8596 | 0.8438 | 8 | 42.0 |
+| Orthogonal recurrent init | 2,783,746 | 394,240 | 0.8789 | 0.8467 | 0.8508 | 0.8430 | 4 | 48.5 |
+
+Selecting on **validation** macro-F1 across all runs, the final model is **cifg** (cell `cifg`, 2,685,186 trainable parameters, val macro-F1 0.8684). On the 10,000-review test set it obtains accuracy **0.8893**, macro-F1 **0.8614**, macro precision 0.8616 and macro recall 0.8612.
+
+Full discussion: `report/report.md`; figures in `figures/`.
 <!-- RESULTS_END -->
 
 ## How to run
